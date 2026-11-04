@@ -5,3 +5,4 @@ artifacts/
 logs/
 mlruns/
 .ipynb_checkpoints/
+mlflow.db
