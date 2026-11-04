@@ -9,3 +9,4 @@ PyYAML
 mlflow
 fastapi
 uvicorn
+pydantic
