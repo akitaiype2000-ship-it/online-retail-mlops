@@ -2,10 +2,13 @@ import os
 import joblib
 import pandas as pd
 
+import mlflow
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import f1_score, roc_auc_score
 
 
 class ModelTrainer:
@@ -24,7 +27,7 @@ class ModelTrainer:
         X = df.drop(columns=["CustomerID", "high_value_repeat"])
         y = df["high_value_repeat"]
 
-        # Train Test Split
+        # Train-Test Split
         X_train, X_test, y_train, y_test = train_test_split(
             X,
             y,
@@ -33,20 +36,44 @@ class ModelTrainer:
             stratify=y
         )
 
-        # Scaling
+        # Feature Scaling
         scaler = StandardScaler()
 
         X_train_scaled = scaler.fit_transform(X_train)
         X_test_scaled = scaler.transform(X_test)
 
+        os.makedirs(self.model_dir, exist_ok=True)
+
+        # MLflow Experiment
+        mlflow.set_experiment("Online Retail High Value Customer Prediction")
+
+        # =====================================================
         # Logistic Regression
+        # =====================================================
+
         print("Training Logistic Regression...")
 
         log_model = LogisticRegression(random_state=42)
 
-        log_model.fit(X_train_scaled, y_train)
+        with mlflow.start_run(run_name="Logistic Regression"):
 
+            log_model.fit(X_train_scaled, y_train)
+
+            log_pred = log_model.predict(X_test_scaled)
+
+            log_f1 = f1_score(y_test, log_pred)
+            log_roc = roc_auc_score(y_test, log_pred)
+
+            mlflow.log_param("model", "Logistic Regression")
+            mlflow.log_param("random_state", 42)
+
+            mlflow.log_metric("F1 Score", log_f1)
+            mlflow.log_metric("ROC AUC", log_roc)
+
+        # =====================================================
         # Random Forest
+        # =====================================================
+
         print("Training Random Forest...")
 
         rf_model = RandomForestClassifier(
@@ -54,13 +81,40 @@ class ModelTrainer:
             random_state=42
         )
 
-        rf_model.fit(X_train, y_train)
+        with mlflow.start_run(run_name="Random Forest"):
 
-        os.makedirs(self.model_dir, exist_ok=True)
+            rf_model.fit(X_train, y_train)
 
-        joblib.dump(log_model, os.path.join(self.model_dir, "logistic_model.pkl"))
-        joblib.dump(rf_model, os.path.join(self.model_dir, "random_forest_model.pkl"))
-        joblib.dump(scaler, os.path.join(self.model_dir, "scaler.pkl"))
+            rf_pred = rf_model.predict(X_test)
+
+            rf_f1 = f1_score(y_test, rf_pred)
+            rf_roc = roc_auc_score(y_test, rf_pred)
+
+            mlflow.log_param("model", "Random Forest")
+            mlflow.log_param("n_estimators", 100)
+            mlflow.log_param("random_state", 42)
+
+            mlflow.log_metric("F1 Score", rf_f1)
+            mlflow.log_metric("ROC AUC", rf_roc)
+
+        # =====================================================
+        # Save Models
+        # =====================================================
+
+        joblib.dump(
+            log_model,
+            os.path.join(self.model_dir, "logistic_model.pkl")
+        )
+
+        joblib.dump(
+            rf_model,
+            os.path.join(self.model_dir, "random_forest_model.pkl")
+        )
+
+        joblib.dump(
+            scaler,
+            os.path.join(self.model_dir, "scaler.pkl")
+        )
 
         print("Model Training Completed")
 
