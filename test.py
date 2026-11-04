@@ -4,7 +4,6 @@ from src.components.data_transformation import DataTransformation
 from src.components.model_trainer import ModelTrainer
 from src.components.model_evaluation import ModelEvaluation
 
-
 # Data Ingestion
 ingestion = DataIngestion()
 ingestion.initiate_data_ingestion()
@@ -32,7 +31,7 @@ trainer = ModelTrainer()
 # Model Evaluation
 evaluation = ModelEvaluation()
 
-comparison_df = evaluation.initiate_model_evaluation(
+evaluation.initiate_model_evaluation(
     X_train,
     X_test,
     y_train,
@@ -41,5 +40,4 @@ comparison_df = evaluation.initiate_model_evaluation(
     X_test_scaled
 )
 
-print("\nPipeline Completed Successfully!")
-print(comparison_df)
+print("Pipeline Completed Successfully!")
