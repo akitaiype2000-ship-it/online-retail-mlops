@@ -1,11 +1,14 @@
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 import joblib
-
+print(">>> LOADING app.py <<<")
 app = FastAPI(
     title="Online Retail High Value Customer Prediction API"
 )
-
+instrumentator = Instrumentator()
+instrumentator.instrument(app)
+instrumentator.expose(app, endpoint="/metrics")
 # Load model
 model = joblib.load("artifacts/models/random_forest_model.pkl")
 
@@ -16,7 +19,9 @@ class CustomerData(BaseModel):
     purchase_frequency: int
     average_order_value: float
     recency_days: int
-
+@app.get("/hello")
+def hello():
+    return {"message": "Hello"}
 
 @app.get("/")
 def home():
